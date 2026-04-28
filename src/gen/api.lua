@@ -2,7 +2,7 @@ local c_grammar = require 'gen.c_grammar'
 
 local map_type = require "gen.map_type"
 
-local dir = "./deps/neovim-0.12.1/src/nvim/api"
+local dir = "./deps/nvim/src/nvim/api"
 
 ---@param call_expr string
 ---@param has_err boolean

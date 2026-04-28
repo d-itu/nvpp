@@ -3,7 +3,7 @@ local hashy = require 'gen.hashy'
 
 local map_type = require "gen.map_type"
 
-local src = io.open "./deps/neovim-0.12.1/src/nvim/api/keysets_defs.h"
+local src = io.open "./deps/nvim/src/nvim/api/keysets_defs.h"
 assert(src)
 local src = src:read "*a"
 local src = c_grammar.grammar:match(src)

@@ -1,8 +1,8 @@
 -fpic
 -shared
--Ideps/neovim-0.12.1/src
--Ideps/neovim-0.12.1/zig-out/headers
--Ideps/neovim-0.12.1/zig-out/config
+-Ideps/nvim/src
+-Ideps/nvim/zig-out/headers
+-Ideps/nvim/zig-out/config
 -Ibuild/include
 -Iinclude
 -std=c++23

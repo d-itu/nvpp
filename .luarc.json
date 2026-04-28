@@ -3,7 +3,7 @@
   "runtime.version": "LuaJIT",
   "workspace.library": [
     "/usr/share/nvim/runtime/lua/vim",
-    "./deps/neovim-0.12.1/src",
+    "./deps/nvim/src",
     "./src"
   ]
 }
