@@ -10,3 +10,5 @@
 -Wall
 -Wextra
 -Wno-missing-designated-field-initializers
+-Wno-missing-field-initializers
+-Wno-return-type-c-linkage

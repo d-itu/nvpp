@@ -8,80 +8,111 @@ assert(src)
 local src = src:read "*a"
 local src = c_grammar.grammar:match(src)
 
+---@param fields nvim.c_grammar.Keyset.Field[]
 ---@param name string
----@param fields table<string, nvim.c_grammar.Keyset.Field>
+---@param map table<string, nvim.c_grammar.Keyset.Field>
 ---@param order string[]
-local function gen(name, fields, order)
-  local members = vim.iter(order)
-      ---@param key string
-      :map(function(key)
-        local field = fields[key]
-        return ("  std::optional<%s> %s;\n"):format(map_type(field.type, "ref"), field.name)
-      end)
-      :totable()
-  local build = vim.iter(order)
-      :enumerate()
-      ---@param index integer
-      ---@param key string
-      :map(function(index, key)
-        local field = fields[key]
-        return ([[
-    if (%s.has_value()) {
-      ret.%s = *%s;
-      ret.is_set__%s_ |= OptionalKeys{1} << %d;
-    }
-]]):format(field.name, field.name, field.name, name, index)
-      end)
-      :totable()
+local function gen_key_dict(fields, name, map, order)
+  ---@type string[]
+  local builder_members = {}
+  ---@type string[]
+  local members = {}
 
-  local getters = vim.iter(order)
+  vim.iter(fields)
+      :skip(1)
+  ---@param field nvim.c_grammar.Keyset.Field
+      :each(function(field)
+        table.insert(builder_members, ("  std::optional<%s> %s;\n"):format(map_type(field.type, "ref"), field.name))
+        table.insert(members, ("  %s m_%s;\n"):format(map_type(field.type, "c"), field.name))
+      end)
+
+  ---@type string[]
+  local getters = {}
+  ---@type string[]
+  local builder_args = {}
+
+  vim.iter(order)
       :enumerate()
-      ---@param index integer
-      ---@param key string
-      :map(function(index, key)
-        local field = fields[key]
-        local ty = map_type(field.type, "ref")
+  ---@param index number
+  ---@param key string
+      :each(function(index, key)
+        local field = map[key]
+        local type = map_type(field.type, "ref")
+        table.insert(builder_args, ([[
+    if (%s.has_value()) {
+      ret.m_%s = *%s;
+      ret.m_mask |= std::uint64_t{1} << %d;
+    }
+]]):format(field.name, field.name, field.name, index))
+
         local getter_name = field.name
         if getter_name == name then getter_name = getter_name .. "_" end
-        return ([[
+        table.insert(getters, ([[
   std::optional<%s> %s() const noexcept {
-    if (is_set__%s_ & OptionalKeys{1} << %d) {
-      return %s{static_cast<const Dict(%s) &>(*this).%s};
+    if (m_mask & std::uint64_t{1} << %d) {
+      return m_%s;
     }
     return {};
   }
-]]):format(ty, getter_name, name, index, ty, name, field.name)
+]]):format(type, getter_name, index, field.name))
       end)
-      :totable()
 
-  local builder = {
-    ("struct %s {\n"):format(name),
-    members,
-    ("  [[gnu::always_inline]] operator Dict(%s)() const noexcept {\n"):format(name),
-    ("    auto ret = KeyDict_%s{};\n"):format(name),
-    build,
-    "    return ret;\n",
-    "  }\n",
-    "};\n",
+  local builder = ([[
+struct %s {
+%s
+  constexpr operator keysets::%s() const noexcept {
+    keysets::%s ret{};
+%s    return ret;
   }
-  local view = {
-    ("struct %s: Dict(%s) {\n"):format(name, name),
-    getters,
-    "};\n",
-  }
-  return vim.iter(builder):flatten(1):join "",
-      vim.iter(view):flatten(1):join ""
+};
+]]):format(name, table.concat(builder_members), name, name, table.concat(builder_args))
+
+  local definition = ([[
+struct %s {
+  uint64_t m_mask;
+%s%s};
+]]):format(name, table.concat(members), table.concat(getters))
+
+  return builder, definition
 end
 
 local builders = {}
-local views = {}
+local definitions = {}
+
+---@param fields table<string, nvim.c_grammar.Keyset.Field>
+---@param ownership ownership
+local function gen_members(fields, ownership)
+  local members = {}
+  for _, field in pairs(fields) do
+    local type = map_type(field.type, ownership)
+    table.insert(members, ("  %s %s;\n"):format(type, field.name))
+  end
+  return table.concat(members)
+end
 
 for _, x in ipairs(src) do
   if not x.keyset_name or not x.fields then goto continue end
   if x.fields[1].name ~= 'is_set__' .. x.keyset_name .. '_' then
-    local alias = ("using %s = Dict(%s);\n"):format(x.keyset_name, x.keyset_name)
-    table.insert(views, alias)
-    table.insert(builders, alias)
+    table.insert(builders, ([[
+struct %s {
+%s  constexpr operator keysets::%s() const noexcept {
+    return {
+      %s
+    };
+  }
+};
+]]):format(
+      x.keyset_name,
+      gen_members(x.fields, "ref"),
+      x.keyset_name,
+      vim.iter(x.fields)
+      ---@param field nvim.c_grammar.Keyset.Field
+      :map(function(field)
+        return (".%s = %s,"):format(field.name, field.name)
+      end)
+      :join ""
+    ))
+    table.insert(definitions, ("struct %s {\n%s};"):format(x.keyset_name, gen_members(x.fields, "c")))
     goto continue
   end
   local keys = {}
@@ -92,20 +123,24 @@ for _, x in ipairs(src) do
     fields[key] = field
   end)
   local order = hashy.hashy_hash(x.keyset_name, keys, function(idx) return idx end)
-  local builder, view = gen(x.keyset_name, fields, order)
+  local builder, view = gen_key_dict(x.fields, x.keyset_name, fields, order)
   table.insert(builders, builder)
-  table.insert(views, view)
+  table.insert(definitions, view)
   ::continue::
 end
 
-io.stdout:write [[#pragma once
+io.stdout:write [[
+#pragma once
+
 #include <optional>
 #include <nvpp/types.hh>
-namespace nvpp::keysets::builder {
-]]
-vim.iter(builders):each(function(x) io.stdout:write(x) end)
-io.stdout:write "}\n"
 
-io.stdout:write "namespace nvpp::keysets {\n"
-vim.iter(views):each(function(x) io.stdout:write(x) end)
+namespace nvpp::keysets {
+extern "C" {
+]]
+vim.iter(definitions):each(function(x) io.stdout:write(x) end)
+io.stdout:write "}\n}\n\n"
+
+io.stdout:write "namespace nvpp::keysets::builder {\n"
+vim.iter(builders):each(function(x) io.stdout:write(x) end)
 io.stdout:write "}"

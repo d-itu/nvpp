@@ -1,31 +1,43 @@
 local c_grammar = require "gen.c_grammar"
 
 local allocated = {
-  String = "nvpp::alloc::string",
-  Object = "nvpp::alloc::object",
-  Array  = "nvpp::alloc::array",
-  Dict   = "nvpp::alloc::dict",
+  String      = "alloc::string",
+  Object      = "alloc::object",
+  Array       = "alloc::array",
+  Dict        = "alloc::dict",
+  StringArray = "alloc::string_array",
+}
+
+local raw = {
+  Array       = "details::vec<object>",
+  Dict        = "details::vec<std::pair<string, object>>",
+  StringArray = "details::vec<string>",
 }
 
 local primitives = {
-  Integer = "std::int64_t",
-  uint64_t = "std::uint64_t",
-  Float = "double",
-  Boolean = "bool",
-  Buffer = "nvpp::buffer",
-  Window = "nvpp::window",
-  Tabpage = "nvpp::tabpage",
-  HLGroupId = "nvpp::hl_group_id",
+  Integer     = "std::int64_t",
+  uint64_t    = "std::uint64_t",
+  Float       = "double",
+  Boolean     = "bool",
+  Buffer      = "nvpp::buffer",
+  Window      = "nvpp::window",
+  Tabpage     = "nvpp::tabpage",
+  HLGroupID   = "nvpp::hl_group_id",
+  LuaRef      = "nvpp::lua_ref",
 
-  String = "nvpp::string",
-  Object = "nvpp::object",
-  Array = "nvpp::array",
-  Dict = "nvpp::dict",
+  String      = "string",
+  Object      = "object",
+  Array       = "array",
+  Dict        = "dict",
+  StringArray = "string_array",
 
-  void = "void",
+  void        = "void",
 }
 
----@alias ownership "ref" | "owned"
+---@alias ownership
+---| "ref"
+---| "owned"
+---| "c"
 
 ---@type table<string, fun(_:any, _:ownership): string>
 local containers
@@ -35,8 +47,16 @@ local containers
 ---@return string
 local function map_type(ty, ownership)
   do
-    local primitive = (ownership == "owned" and allocated[ty]) or primitives[ty]
-    if primitive then return primitive end
+    local primitive = primitives[ty]
+    if primitive then
+      if ownership == "owned" then
+        return allocated[ty] or primitive
+      end
+      if ownership == "c" then
+        return raw[ty] or primitive
+      end
+      return primitive
+    end
   end
 
   if not c_grammar.typed_container:match(ty) then return ty end
@@ -49,29 +69,34 @@ local function map_type(ty, ownership)
 end
 
 containers = {
-  Dict = function(name, ownership) return (ownership == "owned" and "keysets::" or "keysets::builder::") .. name end,
-  DictAs = function(_, ownership) return ownership == "ref" and "dict" or "alloc::dict" end,
+  Dict = function(name, ownership)
+    return (ownership ~= "ref" and "keysets::" or "keysets::builder::") .. name
+  end,
+  DictAs = function(_, ownership)
+    return map_type("Dict", ownership)
+  end,
   ArrayOf = function(inner, ownership)
+    if ownership == "c" then return raw.Array end
     local inner = map_type(inner, ownership)
     local ty = ("array_of<%s>"):format(inner)
     return ownership == "ref" and ty or "alloc::" .. ty
   end,
   DictOf = function(inner, ownership)
+    if ownership == "c" then return raw.Dict end
     local inner = map_type(inner, ownership)
     local ty = ("dict_of<%s>"):format(inner)
     return ownership == "ref" and ty or "alloc::" .. ty
   end,
   Union = function(_, ownership)
-    return ownership == "ref" and "object" or "alloc::object"
+    return map_type("Object", ownership)
   end,
   Tuple = function(_, ownership)
-    return ownership == "ref" and "array" or "alloc::array"
+    return map_type("Array", ownership)
   end,
-  -- Tuple = function(inner, ownership)
-  --   if ownership == "ref" then return "array" end
-  --   local fields = vim.iter(inner):map(function(x) return map_type(x, ownership) end):join ", "
-  --   return ("std::tuple<%s>"):format(fields)
-  -- end,
+  LuaRefOf = function() return "lua_ref" end,
+  Enum = function(_, ownership)
+    return map_type("String", ownership)
+  end,
 }
 
 return map_type

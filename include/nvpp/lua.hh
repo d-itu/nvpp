@@ -1,9 +1,17 @@
+#include <tuple>
 #include <type_traits>
-
-#include <lua.hpp>
 
 #include <nvpp/types.hh>
 
+namespace nvpp {
+  struct lua;
+}
+namespace nvpp::c {
+extern "C" {
+  lua_ref nlua_ref_global(void*, int);
+  void lua_pushcclosure(void*, int(*)(lua), int);
+}
+}
 
 namespace nvpp {
 
@@ -14,19 +22,17 @@ struct lua_c_func;
 template <auto f>
 constexpr auto lua_c_func = details::lua_c_func<f>::value;
 
-extern "C" LuaRef nlua_ref_global(void*, int);
-
 struct lua {
   void *l;
 
   template <bool is_noexcept>
   int push(int(*f)(lua) noexcept(is_noexcept)) const noexcept {
-    lua_pushcclosure((lua_State *) l, std::bit_cast<lua_CFunction>(f), 0);
+    c::lua_pushcclosure(l, f, 0);
     return 1;
   }
 
   inline auto pop_lua_ref() const noexcept {
-    return nvpp::lua_ref{nlua_ref_global(l, -1)};
+    return lua_ref{c::nlua_ref_global(l, -1)};
   }
 
   template <auto f>
