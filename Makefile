@@ -5,8 +5,14 @@ HEADERS := $(shell find include -type f -name "*.hh")
 .PHONY: all
 all: build/lib/libnvpp.so
 
+.PHONY: generate
+generate: build/include/nvpp/generated/keysets.hh build/include/nvpp/generated/api.hh
+
+.PHONY: deps
+deps: deps/nvim/zig-out/headers
+
 deps/nvim.tar.gz:
-	mkdir -p deps
+	@mkdir -p deps
 	curl -L https://github.com/neovim/neovim/archive/refs/tags/v$(NVIM_VERSION).tar.gz -o $@
 
 deps/nvim: deps/nvim.tar.gz
@@ -34,9 +40,9 @@ build/include/nvpp/generated/api.hh:\
 
 build/lib/libnvpp.so:\
 	src/main.cc\
-	deps/nvim\
-	build/include/nvpp/generated/keysets.hh\
-	build/include/nvpp/generated/api.hh\
-	compile_flags.txt build/lib/ deps/nvim/zig-out/headers
+	$(HEADERS)\
+	deps\
+	generate\
+	compile_flags.txt
 	clang++ $(shell cat compile_flags.txt) $< -o $@
 
