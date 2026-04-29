@@ -1,15 +1,11 @@
 #include <nvpp/lua.hh>
 #include <nvpp/api.hh>
 
-#define nvpp_array(...) nvpp::array(nvpp::make_array(__VA_ARGS__))
-
-// constexpr auto arr = nvpp::array_of<int>(nvpp::make_array(1));
-
 void err(std::string_view msg) {
-  nvpp::api::echo(nvpp::make_array(nvpp_array(msg)), false, {.err = true}).value();
+  nvpp::api::echo(nvpp::make_array(nvpp::make_array(msg)), false, {.err = true}).value();
 }
 void echo(std::string_view msg) {
-  nvpp::api::echo(nvpp::make_array(nvpp_array(msg)), false, {}).value();
+  nvpp::api::echo(nvpp::make_array(nvpp::make_array(msg)), false, {}).value();
 }
 
 static void setup(nvpp::lua l) try {

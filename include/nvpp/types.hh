@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -69,7 +68,7 @@ struct array_of: details::vec<object> {
   constexpr array_of(details::vec<object> x) noexcept: vec(x) {}
 
   template <std::size_t n>
-  constexpr array_of(const std::array<object, n> &arr) noexcept: vec{vec::from_slice(arr.size(), arr.data())} {}
+  constexpr array_of(const object (&arr)[n]) noexcept: vec{vec::from_slice(n, arr)} {}
 
   constexpr array_of(std::span<const object> span) noexcept: vec{vec::from_slice(span.size(), span.data())} {}
 
@@ -145,9 +144,13 @@ struct object {
   constexpr object(tabpage value) noexcept: type{object_type::tabpage}, data{.integer = value} {}
 };
 
-template <typename ...ts>
-constexpr auto make_array(ts ...xs) noexcept {
-  return std::array<object, sizeof...(ts)>{object{xs}...};
+constexpr auto make_array(auto ...xs) noexcept {
+  return array{(object[]){xs...}};
+}
+
+template <typename t>
+constexpr auto make_array_of(std::convertible_to<t> auto ...xs) noexcept {
+  return array_of<t>{(object[]){xs...}};
 }
 
 }
