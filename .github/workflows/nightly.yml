@@ -4,6 +4,9 @@ on:
   push:
     branches: ["master"]
 
+permissions:
+  contents: write
+
 jobs:
   NightlyBuild:
     runs-on: ubuntu-slim
@@ -25,4 +28,5 @@ jobs:
         with:
           name: Nvim++ Nightly
           prerelease: true
+          tag_name: nightly
           files: nvpp.tar.gz
