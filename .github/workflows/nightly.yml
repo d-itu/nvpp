@@ -5,18 +5,20 @@ on:
     branches: ["master"]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  NightlyBuild:
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install nvim
+        run: make nvim-bin
+
       - name: Build
-        run: PREFIX=dist make install
+        run: PREFIX=dist NVIM=nvim-linux-x86_64/bin/nvim make install
 
       - name: Create Tarball
-        run: |
-          tar -czf nvpp.tar.gz dist/
+        run: tar -czf nvpp.tar.gz dist/
 
       - name: Release
         uses: softprops/action-gh-release@v3
@@ -24,4 +26,3 @@ jobs:
           name: Nvim++ Nightly
           prerelease: true
           files: nvpp.tar.gz
-

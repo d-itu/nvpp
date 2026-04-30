@@ -1,5 +1,7 @@
 NVIM_VERSION := 0.12.1
 
+NVIM ?= nvim
+
 HEADERS := $(shell find include -type f -name "*.hh")
 GENERATED_HEADERS := build/include/nvpp/keysets.hh build/include/nvpp/api.hh
 
@@ -7,6 +9,15 @@ GENERATED_HEADERS := build/include/nvpp/keysets.hh build/include/nvpp/api.hh
 generate: $(GENERATED_HEADERS)
 
 PREFIX ?= /usr/local
+
+.PHONY: nvim-bin
+nvim-bin: nvim-linux-x86_64/bin/nvim
+
+nvim-linux-x86_64.tar.gz:
+	curl -L https://github.com/neovim/neovim/releases/download/v$(NVIM_VERSION)/nvim-linux-x86_64.tar.gz -o $@
+
+nvim-linux-x86_64/bin/nvim: nvim-linux-x86_64.tar.gz
+	tar xzvf $<
 
 .PHONY: install
 install: generate
@@ -16,6 +27,9 @@ install: generate
 
 .PHONY: examples
 examples: build/lib/libnvpp.so
+
+.PHONY: deps
+deps: deps/nvim
 
 deps/nvim.tar.gz:
 	@mkdir -p $(@D)
@@ -31,7 +45,7 @@ build/include/nvpp/keysets.hh:\
 	src/gen/keysets.lua\
 	deps/nvim
 	@mkdir -p $(@D)
-	nvim -u NONE -l src/gen/preload.lua gen.keysets > $@
+	$(NVIM) -u NONE -l src/gen/preload.lua gen.keysets > $@
 
 build/include/nvpp/api.hh:\
 	src/gen/preload.lua\
@@ -39,7 +53,7 @@ build/include/nvpp/api.hh:\
 	src/gen/api.lua\
 	deps/nvim
 	@mkdir -p $(@D)
-	nvim -u NONE -l src/gen/preload.lua gen.api > $@
+	$(NVIM) -u NONE -l src/gen/preload.lua gen.api > $@
 
 build/lib/libnvpp.so:\
 	examples/nvpp.cc\
