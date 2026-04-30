@@ -26,9 +26,10 @@ struct string {
   const char *data{};
   std::size_t size{};
 
-  constexpr string() = default;
-  constexpr string(std::string_view x): data{x.data()}, size{x.size()} {}
-  constexpr string(const char *x): string{std::string_view{x}} {}
+  constexpr string() noexcept = default;
+  constexpr string(std::string_view x) noexcept: data{x.data()}, size{x.size()} {}
+  template <std::size_t n>
+  constexpr string(const char (&s)[n]) noexcept: data{s}, size{n} {}
 };
 
 using integer = std::int64_t;
@@ -44,16 +45,8 @@ namespace details {
 template <typename item_t>
 struct vec {
   std::size_t size;
-  std::size_t capacity;
+  std::size_t capacity{std::numeric_limits<size_t>::max()};
   const item_t *items;
-
-  constexpr static vec from_slice(std::size_t size, const item_t *items) noexcept {
-    return {
-      .size = size,
-      .capacity = std::numeric_limits<size_t>::max(),
-      .items = items,
-    };
-  }
 };
 }
 
@@ -67,10 +60,7 @@ template <typename t>
 struct array_of: details::vec<object> {
   constexpr array_of(details::vec<object> x) noexcept: vec(x) {}
 
-  template <std::size_t n>
-  constexpr array_of(const object (&arr)[n]) noexcept: vec{vec::from_slice(n, arr)} {}
-
-  constexpr array_of(std::span<const object> span) noexcept: vec{vec::from_slice(span.size(), span.data())} {}
+  constexpr array_of(std::span<const object> span) noexcept: vec{.size = span.size(), .items = span.data()} {}
 
   template <typename u>
   constexpr array_of(array_of<u> o) noexcept: vec{static_cast<vec>(o)} {}
@@ -125,9 +115,15 @@ struct object {
 
   constexpr object(double value) noexcept: type{object_type::floating}, data{.floating = value} {}
 
-  constexpr object(auto &&value) noexcept
-    requires requires { string{std::forward<decltype(value)>(value)}; }
-  : type{object_type::string}, data{.string = string{std::forward<decltype(value)>(value)}} {}
+  constexpr object(string s) noexcept
+  : type{object_type::string}, data{.string = s} {}
+
+  constexpr object(std::string_view s) noexcept
+  : type{object_type::string}, data{.string = string{s}} {}
+
+  template <std::size_t n>
+  constexpr object(const char (&s)[n]) noexcept
+  : type{object_type::string}, data{.string = string{s}} {}
 
   template <typename t>
   constexpr object(array_of<t> value) noexcept: type{object_type::array}, data{.array = value} {}
@@ -143,15 +139,6 @@ struct object {
 
   constexpr object(tabpage value) noexcept: type{object_type::tabpage}, data{.integer = value} {}
 };
-
-constexpr auto make_array(auto ...xs) noexcept {
-  return array{(object[]){xs...}};
-}
-
-template <typename t>
-constexpr auto make_array_of(std::convertible_to<t> auto ...xs) noexcept {
-  return array_of<t>{(object[]){xs...}};
-}
 
 }
 
