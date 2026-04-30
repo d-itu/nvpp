@@ -5,6 +5,7 @@
 #include <limits>
 #include <span>
 #include <string_view>
+#include <variant>
 
 namespace nvpp {
 enum struct error_type {
@@ -138,6 +139,37 @@ struct object {
   constexpr object(window value) noexcept: type{object_type::window}, data{.integer = value} {}
 
   constexpr object(tabpage value) noexcept: type{object_type::tabpage}, data{.integer = value} {}
+
+  using variant = std::variant<nil_t, bool, integer, double, string, array, dict, lua_ref, buffer, window, tabpage>;
+  constexpr operator variant() const noexcept {
+    return to_variant();
+  }
+  constexpr variant to_variant() const noexcept {
+    switch (type) {
+    case object_type::nil:
+      return nil;
+    case object_type::boolean:
+      return data.boolean;
+    case object_type::integer:
+      return data.integer;
+    case object_type::floating:
+      return data.floating;
+    case object_type::string:
+      return data.string;
+    case object_type::array:
+      return data.array;
+    case object_type::dict:
+      return data.dict;
+    case object_type::lua_ref:
+      return data.lua_ref;
+    case object_type::buffer:
+      return data.integer;
+    case object_type::window:
+      return data.integer;
+    case object_type::tabpage:
+      return data.integer;
+    }
+  }
 };
 
 }
