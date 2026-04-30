@@ -17,9 +17,6 @@ install: generate
 .PHONY: examples
 examples: build/lib/libnvpp.so
 
-.PHONY: deps
-deps: deps/nvim/zig-out/headers
-
 deps/nvim.tar.gz:
 	@mkdir -p $(@D)
 	curl -L https://github.com/neovim/neovim/archive/refs/tags/v$(NVIM_VERSION).tar.gz -o $@
@@ -27,9 +24,6 @@ deps/nvim.tar.gz:
 deps/nvim: deps/nvim.tar.gz
 	tar -xzf $< -C deps
 	mv deps/neovim-$(NVIM_VERSION) deps/nvim
-
-deps/nvim/zig-out/headers: deps/nvim
-	zig build --build-file deps/nvim/build.zig gen_headers
 
 build/include/nvpp/keysets.hh:\
 	src/gen/preload.lua\
@@ -51,7 +45,6 @@ build/lib/libnvpp.so:\
 	examples/nvpp.cc\
 	$(HEADERS)\
 	$(GENERATED_HEADERS)\
-	deps/nvim/zig-out/headers\
 	compile_flags.txt
 	@mkdir -p $(@D)
 	$(CXX) $(shell cat compile_flags.txt) $< -o $@
