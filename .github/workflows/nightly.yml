@@ -1,0 +1,27 @@
+name: Nightly Build
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build
+        run: PREFIX=dist make install
+
+      - name: Create Tarball
+        run: |
+          tar -czf nvpp.tar.gz dist/
+
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: Nvim++ Nightly
+          prerelease: true
+          files: nvpp.tar.gz
+
