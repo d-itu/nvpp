@@ -8,11 +8,10 @@ permissions:
   contents: write
 
 jobs:
-  NightlyBuild:
+  dist:
     runs-on: ubuntu-slim
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
       - name: Install nvim
         run: make nvim-bin
@@ -20,13 +19,10 @@ jobs:
       - name: Build
         run: PREFIX=dist NVIM=nvim-linux-x86_64/bin/nvim make install
 
-      - name: Create Tarball
-        run: tar -czf nvpp.tar.gz dist/
-
-      - name: Release
-        uses: softprops/action-gh-release@v3
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          name: Nvim++ Nightly
-          prerelease: true
-          tag_name: nightly
-          files: nvpp.tar.gz
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: ${{ github.ref_name }}/dist
+          publish_dir: ./dist
+          force_orphan: true
