@@ -26,3 +26,4 @@ jobs:
           publish_branch: ${{ github.ref_name }}-dist
           publish_dir: ./dist
           force_orphan: true
+          enable_jekyll: true
