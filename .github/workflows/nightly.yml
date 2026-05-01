@@ -23,6 +23,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: ${{ github.ref_name }}/dist
+          publish_branch: ${{ github.ref_name }}-dist
           publish_dir: ./dist
           force_orphan: true
