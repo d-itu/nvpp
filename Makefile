@@ -25,6 +25,10 @@ install: generate
 	cp -r include/nvpp/* $(PREFIX)/include/nvpp/
 	cp -r build/include/nvpp/* $(PREFIX)/include/nvpp/
 
+.PHONY: distribute
+distribute: install
+	cp -r template/* $(PREFIX)
+
 .PHONY: examples
 examples: build/lib/libnvpp.so
 

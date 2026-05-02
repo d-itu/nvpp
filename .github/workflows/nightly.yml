@@ -17,7 +17,7 @@ jobs:
         run: make nvim-bin
 
       - name: Build
-        run: PREFIX=dist NVIM=nvim-linux-x86_64/bin/nvim make install
+        run: PREFIX=dist NVIM=nvim-linux-x86_64/bin/nvim make distribute
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
