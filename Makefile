@@ -19,15 +19,15 @@ nvim-linux-x86_64.tar.gz:
 nvim-linux-x86_64/bin/nvim: nvim-linux-x86_64.tar.gz
 	tar xzvf $<
 
-.PHONY: install
-install: generate
+.PHONY: install_headers
+install_headers: generate
 	mkdir -p $(PREFIX)/include/nvpp
 	cp -r include/nvpp/* $(PREFIX)/include/nvpp/
 	cp -r build/include/nvpp/* $(PREFIX)/include/nvpp/
 
 .PHONY: distribute
-distribute: install
-	cp -r template/* $(PREFIX)
+distribute: install_headers
+	cp -r templates/* $(PREFIX)
 
 .PHONY: examples
 examples: build/lib/libnvpp.so
