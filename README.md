@@ -16,7 +16,7 @@ Nvpp is a header-only library which contains api wrappers generated from neovim 
 ## Use Nvpp in Your Project
 
 Nvpp supports build systems such as CMake and Meson. You can also manually install header files in your system.
-Generated headers with builder support are distributed in branches with name *<tag>*`-dist`, while `master` branch contains code-generation scripts.
+Generated headers with builder support are distributed in branches with name *\<tag\>*`-dist`, while `master` branch contains code-generation scripts.
 
 ### CMake
 Use `FetchContent` module:
@@ -38,7 +38,7 @@ target_link_libraries(my-plugin
 ### Meson
 Use `subproject` and [wrap dependency system](https://mesonbuild.com/Wrap-dependency-system-manual.html):
 
-`nvpp.wrap`
+`subprojects/nvpp.wrap`
 ```ini
 [wrap-git]
 url = https://github.com/d-itu/nvpp.git
