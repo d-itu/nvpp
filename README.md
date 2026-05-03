@@ -16,7 +16,7 @@ Nvpp is a header-only library which contains api wrappers generated from neovim 
 ## Use Nvpp in Your Project
 
 Nvpp supports build systems such as CMake and Meson. You can also manually install header files in your system.
-Generated headers with builder support are distributed in branches with name *`<tag>`*`-dist`, while `master` branch contains code-generation scripts.
+Generated headers with builder support are distributed in branches with name *<tag>*`-dist`, while `master` branch contains code-generation scripts.
 
 ### CMake
 Use `FetchContent` module:
@@ -86,7 +86,7 @@ static void setup() {
   nvpp::api::set_option_value("number", true, {}).value();
 }
 
-extern "C" int luaopen_nvpp(nvpp::lua l) {
+extern "C" int luaopen_my_plugin(nvpp::lua l) {
   return l.push(nvpp::lua_c_func<setup>);
 }
 ```
