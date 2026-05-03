@@ -46,6 +46,7 @@ revision = master-dist
 depth = 1
 ```
 
+`meson.build`
 ```meson
 nvpp_proj = subproject('nvpp')
 nvpp_dep = nvpp_proj.get_variable('nvpp_dep')
