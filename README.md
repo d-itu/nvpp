@@ -93,7 +93,10 @@ extern "C" int luaopen_my_plugin(nvpp::lua l) {
 ```
 
 ## Features
+- [x] Low-level C API interaction.
 - [x] C++ style type system.
 - [x] Zero-overhead (no additional memory allocation or copy) API wrappers.
-- [ ] C++ templates converting C++ callbacks to LuaCFunction.
+- [ ] C++ templates converting C++ callbacks to `LuaCFunction`.
 - [ ] RAII-style resource management.
+- [ ] Access to neovim Lua modules.
+- [ ] Re-export Lua global `vim` namespace.
