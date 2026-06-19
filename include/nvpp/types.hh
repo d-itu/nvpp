@@ -62,6 +62,8 @@ struct array_of: details::vec<object> {
   constexpr array_of(details::vec<object> x) noexcept: vec(x) {}
 
   constexpr array_of(std::span<const object> span) noexcept: vec{.size = span.size(), .items = span.data()} {}
+  constexpr array_of(const object[0]) noexcept: array_of{} {}
+  constexpr array_of() noexcept: vec{.size = 0, .items = nullptr} {}
 
   template <typename u>
   constexpr array_of(array_of<u> o) noexcept: vec{static_cast<vec>(o)} {}
